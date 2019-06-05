@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="keywords" content="">
+	<title>编辑页</title>
+    <link rel="stylesheet" type="text/css" href="css/base.css" media="screen" />
+	<link rel="stylesheet" type="text/css" href="css/spectrum.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="css/index.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="css/tem.css" media="screen" />
+    <script type="text/javascript" src="js/jquery-1.9.0.min.js"></script>
+    <script type="text/javascript" src="js/spectrum.js"></script>
+	<script type="text/javascript" src="js/vue-2.4.0.js"></script>
+    <script type="text/javascript" src="js/drag.js"></script>
+    <script type="text/javascript" src="ins/layer/layer.js"></script>
+    <script>
+    	window.onbeforeunload=function(e){
+		　　var e = window.event||e;
+		　　e.returnValue=("确定不保存一下吗?");
+		}
+    </script>
+</head>
+<body>
+<div id="body">
+	<div class="head">
+		<div class="logo"></div>
+		<div class="box head-bt">
+			<div class="tp"></div>
+			<div class="box bt-op">
+				<button class="save" @click="save"><i class="iconfont icon-baocun"></i><span> 保 存</span></button>
+				<button class="pv" @click="other.preview = !other.preview"><i class="iconfont icon-yulan1"></i><span> 预 览</span></button>
+			</div>
+			<div><button class="colse"><i class="iconfont icon-dengchu"></i></button></div>
+		</div>
+	</div>
+	<div class="main">
+		<div class="left">
+			<div class="tabbox">
+				<div class="leftmain">
+					<div class="tabmain1">
+						<div class="toolbox">
+							<ul class="puilist">
+								<li class="list-item">
+									<div class="info" style="display: block;">
+										<ul class="comtool">
+					                    	<li @click="index" :class="other.route == 'index'? 'active':''">首页</li>
+					                    	<li @click="active" :class="other.route == 'active'? 'active':''">活动说明</li>
+					                    	<li @click="luckypage" :class="other.route == 'luckypage'? 'active':''">中奖页面</li>
+					                    	<li @click="formset" :class="other.route == 'formset'? 'active':''">表单提交页面</li>
+					                    	<li @click="losepage" :class="other.route == 'losepage'? 'active':''">未中奖页面</li>
+					                    	<li @click="sharepage" :class="other.route == 'sharepage'? 'active':''">分享效果</li>
+										</ul>
+									</div>
+								</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="mid" id="mid" @click.stop="blank">
+			<div class="ele" :style="[{height:page.pageheight}]" @click.stop="blank">
+				<div class="elebox" :style="[{backgroundPosition:page.backgroundPosition},{backgroundColor:page.backgroundColor},{backgroundImage:'url('+page.backgroundImage+')'}]">
+					<div id="form-widget-list" style="background-repeat:repeat-y">
+	                    <div class="dragbox" id="draggable">
+	                        <component :is="'tab-'+item.widget.type" v-for="(item,index) in comlist" :key="index" :sbool="sIndex==index" :item="item" @getcx="selector" @getfocus="focus()" @delcx="deleteCom" @keydelcx="deleteCom" :cindex="index" :widname.sync="item.widget.widgetName" @addcx="addItem"></component>
+	                        <div class="pagefoot">
+		                        <div class="record" :class="{marquee_top:other.animate}">
+									<p ref="rollul" v-for="kovey in recordlist">
+										<span>恭喜 {{kovey.tel}} 中奖</span>
+									</p>
+		                        </div>
+		                        <div class="text">
+									<p>已有<span>{{parseInt(Number(base.usernum) + Number(base.userdumnum))}}</span>人参与</p>
+									<p>您今天还有<span>{{base.luckytime}}</span>次抽奖机会</p>
+		                        </div>
+	                        </div>
+	                    </div>
+	                    <div class="alertbg winalert" v-show="other.winshow" v-cloak="">
+							<div class="lightning"></div>
+							<p class="wintitle">恭喜您获得</p>
+							<img :src="luckylist[other.rotate_angle].img" alt="" />
+							<p class="winname">{{luckylist[other.rotate_angle].name}}</p>
+							<p class="winprize">{{luckylist[other.rotate_angle].prize}}</p>
+							<div class="formbtn" @click="register">
+								完善领奖信息
+							</div>
+							<div class="backbtn" @click="close">
+								返 回
+							</div>
+						</div>
+						<div class="alertbg losealert" v-show="other.loseshow" v-cloak="">
+							<p class="losetitle">未中奖</p>
+							<img src="images/lose.png" alt="" />
+							<div class="formbtn" @click="close">
+								再抽一次
+							</div>
+						</div>
+						<div class="alertbg formalert" v-show="other.formshow" v-cloak>
+							<p class="formtitle">完善领奖信息</p>
+							<p class="formsub">请填写您常用的联系方式，作为兑奖时的身份凭证</p>
+							<input type="text" v-model="base.username" :placeholder="formlist[0].val">
+							<input type="text" v-model="base.usertel" :placeholder="formlist[1].val">
+							<div class="submit" @click="submit">提交信息</div>
+						</div>
+						<div class="alertbg inforalert" v-show="other.inforshow" v-cloak>
+							<p class="infortitle"><span>活动说明</span><i class="iconfont icon-guanbi" @click="close"></i></p>
+							<p class="inforsub" v-text="page.text"></p>
+						</div>
+						<div class="alertbg sharealert" v-show="other.shareshow" v-cloak>
+							<div class="sharehead"><img src="images/sharehead.jpg" alt=""></div>
+							<div class="sharecontent">
+								<div class="leftshare">
+									<div class="headicon"><img src="images/fei.jpg" alt=""></div>
+									<div class="sayarea">
+										<div class="sharemain">
+											<div class="sharetitle" v-text="share.sharetit"></div>
+											<div class="shareword" v-text="share.sharesug"></div>
+										</div>
+										<div class="sharepg"><img :src="share.shareimg" alt=""></div>
+									</div>
+								</div>
+								<div class="rightshare">
+									<div class="headicon"><img src="images/my.jpg" alt=""></div>
+									<div class="sayarea">
+										<div class="sharepg"><img :src="share.shareimg" alt=""></div>
+										<div class="sharemain">
+											<div class="sharetitle" v-text="share.sharetit"></div>
+											<div class="shareword" v-text="share.sharesug"></div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+		            </div>
+				</div>
+			</div>
+		</div>
+		<div class="right">
+			<div class="tabbox">
+				<div class="navbox2">
+					<ul class="tabnav2">
+						<li :class="this.other.tabindex == 'base'?'active':''" @click="BaseSet">基础设置</li>
+						<li :class="this.other.tabindex == 'page'?'active':''" @click="PageSet">页面设置</li>
+						<li :class="this.other.tabindex == 'prize'?'active':''" @click="PrizeSet">奖项设置</li>
+						<li :class="this.other.tabindex == 'form'?'active':''" @click="FormSet">表单设置</li>
+						<li :class="this.other.tabindex == 'share'?'active':''" @click="ShareSet">分享设置</li>
+					</ul>
+				</div>
+				<div class="rightmain">
+					<div class="tabmain2">
+						<div class="basesetup" v-show="this.other.tabindex == 'base'? true:false" id="basesetup">
+							<form action="">
+								<div class="formbox lp must">
+									<label for="">页面标题：</label>
+									<input type="text" v-model="base.tit">
+								</div>
+								<div class="formbox lp must">
+									<label for="">开始时间：</label>
+									<datepicker v-model="base.stime"></datepicker>
+								</div>
+								<div class="formbox lp must">
+									<label for="">结束时间：</label>
+									<datepicker v-model="base.etime"></datepicker>
+								</div>
+								<div class="formbox num">
+									<label for="">参与人数：</label>
+									<input type="text" v-model="base.usernum"><span>人</span>
+									(实际允许参加人数，不填写为不限)
+								</div>
+								<div class="formbox num">
+									<label for="">虚拟人数：</label>
+									<input type="text" v-model="base.userdumnum"><span>人</span>
+									(在实际已经参与的人数基础上相加，页面中显示的已参与人数为实际人数+虚拟人数)
+								</div>
+								<hr>
+								<div class="formbox lp must">
+									<label for="">绑定域名：</label>
+									<input type="text" v-model="base.realm">
+								</div>
+								<div class="formbox text">
+									<label for="">活动说明：</label>
+									<textarea type="text" v-model="page.text" placeholder="请输入活动说明文字"></textarea>
+								</div>
+							</form>
+						</div>
+						<div class="pagesetup" v-show="this.other.tabindex == 'page'? true:false" id="pagesetup">
+							<form action="">
+								<div class="formbox lp">
+									<label for="">广告图上传：</label>
+									<div class="pagebgbox">
+										<input type="file" @change="changeadsimg" accept="image/gif,image/jpeg,image/x-png" /><img class="filebg" alt="" :src="page.adsimg" />
+									</div>
+									<div class="button" @click="deleteadsimg">删 除</div>
+									<a :href="page.adsimg" download="" target="_blank"><span>下 载</span></a>
+									支持JPG、PNG、GIF图片上传，文件不得超过500KB。图像宽度建议375PX
+								</div>
+								<div class="formbox lp">
+									<label for="">背景图上传：</label>
+									<div class="pagebgbox" title="背景图建议尺寸 375*666 像素">
+										<input type="file" @change="changebgimg" accept="image/gif,image/jpeg,image/x-png" /><img class="filebg" alt="" :src="page.backgroundImage" />
+									</div>
+									<div class="button" @click="deletebgimg">删 除</div>
+									<a :href="page.backgroundImage" download="" target="_blank">下 载</a>
+									支持JPG、PNG、GIF图片上传，文件不得超过500KB。图像宽度建议375PX
+								</div>
+								<div class="formbox col">
+									<label for="">背景色设置：</label>
+									<div class="colorpickerbox">
+										<colorpicker v-model="page.backgroundColor"></colorpicker>
+									</div>
+									<input type="text" v-model="page.backgroundColor">
+								</div>
+								<hr>
+								<div class="formbox lp">
+									<label for="">转盘图上传：</label>
+									<div class="pagebgbox">
+										<input type="file" @change="changedialimg" accept="image/gif,image/jpeg,image/x-png" /><img class="filebg" alt="" :src="page.dialimg" />
+									</div>
+									<div class="button" @click="deletedialimg">删 除</div>
+									<a :href="page.dialimg" download="" target="_blank">下 载</a>
+									支持JPG、PNG、GIF图片上传，文件不得超过500KB。图像宽度建议316PX
+								</div>
+								<div class="formbox lp">
+									<label for="">转盘灯上传：</label>
+									<div class="pagebgbox">
+										<input type="file" @change="changelightimg" accept="image/gif,image/jpeg,image/x-png" /><img class="filebg" alt="" :src="page.lightimg" />
+									</div>
+									<div class="button" @click="deletelightimg">删 除</div>
+									<a :href="page.lightimg" download="" target="_blank">下 载</a>
+									支持JPG、PNG、GIF图片上传，文件不得超过500KB。图像宽度建议316PX
+								</div>
+								<div class="formbox col">
+									<label for="">转盘色设置：</label>
+									<div class="colorpickerbox">
+										<colorpicker v-model="page.dialcolor"></colorpicker>
+									</div>
+									<input type="text" v-model="page.dialcolor">
+								</div>
+								<hr>
+								<div class="formbox audio">
+									<label>是否开启音乐：</label>
+									<div class="bt-updown">
+										<input type="checkbox" id="audio1" class="chk_3" checked v-model="page.audio"/>
+										<label for="audio1"></label>
+									</div>
+									<span>选择音乐：</span>
+									<span class="audioname" v-text="page.audioname"></span>
+									<div class="button" @click="openaudio">选音乐</div>
+									<span>是否自动播放：</span>
+									<div class="bt-updown">
+										<input type="checkbox" id="audio2" class="chk_3" checked v-model="page.audioauto"/>
+										<label for="audio2"></label>
+									</div>
+								</div>
+							</form>
+						</div>
+						<div class="prizesetup" v-show="this.other.tabindex == 'prize'? true:false" id="prizesetup">
+							<form action="">
+								<p class="title">请设置奖品信息<span>(奖品最多可设置8个)</span></p>
+								<ul class="luckylist">
+									<li v-for="(kovey,index) in luckylist" :class="other.activeindex == index? 'active':''" @click="listswitch(index)">{{kovey.name}}</li>
+									<div class="listop"><span @click="delpz">-</span><span @click="addpz">+</span></div>
+								</ul>
+								<div class="formbox lp must">
+									<label for="">奖品等级：</label>
+									<input type="text" v-model="luckylist[other.activeindex].name" placeholder="例：一等奖">
+								</div>
+								<div class="formbox lp must">
+									<label for="">奖品名称：</label>
+									<input type="text" v-model="luckylist[other.activeindex].prize" placeholder="例：Ipad Air 128G">
+								</div>
+								<div class="formbox num must">
+									<label for="">奖品数量：</label>
+									<input type="text" v-model="luckylist[other.activeindex].num"><span>个</span>
+									（奖品数量直接影响中奖概率。例：参与人数为1000，奖品为1，那中奖的概率就是1/1000）
+								</div>
+								<div class="formbox lp">
+									<label for="">奖品图片：</label>
+									<div class="pagebgbox">
+										<input type="file" @change="changepzimg" accept="image/gif,image/jpeg,image/x-png" /><img class="filebg" alt="" :src="luckylist[other.activeindex].img" />
+									</div>
+									<div class="button" @click="deletepzimg(other.activeindex)">删 除</div>
+									支持JPG、PNG、GIF图片上传，文件不得超过500KB。图像宽度建议640PX
+								</div>
+							</form>
+						</div>
+						<div class="formsetup" v-show="this.other.tabindex == 'form'? true:false" id="formsetup">
+							<div class="formbox fm must" v-for="(kovey,index) in formlist">
+								<label for="">单行文本：</label>
+								<input type="text" v-model="kovey.val">
+							</div>
+						</div>
+						<div class="sharesetup" v-show="this.other.tabindex == 'share'? true:false" id="sharesetup">
+							<div class="formbox lp must">
+								<label for="">标题设置：</label>
+								<input type="text" v-model="share.sharetit" placeholder="情人节送豪礼">
+							</div>
+							<div class="formbox sharetext">
+								<label for="">文字介绍：</label>
+								<textarea type="text" rows="2" cols="15" maxlength="22" placeholder="字数限22个中文字符" v-model="share.sharesug"></textarea>
+							</div>
+							<div class="formbox lp">
+								<label for="">分享图片：</label>
+								<div class="pagebgbox">
+									<input type="file" @change="changesrimg" accept="image/gif,image/jpeg,image/x-png" /><img class="filebg" alt="" :src="share.shareimg" />
+								</div>
+								<div class="button" @click="deletesrimg">删 除</div>
+								支持JPG、PNG、GIF图片上传，文件不得超过500KB。图像宽度建议640PX
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="alert">
+		<div class="alertbox audioroom" v-show="other.audioroom" v-cloak>
+			<div class="alertdiv">
+				<div class="alertleft">
+					<ul>
+						<li class="active">系统音乐</li>
+					</ul>
+				</div>
+				<div class="alertright">
+					<div class="alerttop">
+						<div class="close" @click="roomclose">
+							<i class="iconfont icon-guanbi"></i>
+						</div>
+					</div>
+					<div class="alertdown audio">
+						<ul>
+							<li v-for="(kovey,index) in audiolist" :class="kovey.src == page.audiosrc? 'on':''">
+								<audio :src="kovey.src" ref="audio"></audio>
+								<img src="./images/audiobg.jpg" @click="chooseaudio(index)"/>
+								<p>
+									<span>{{kovey.name}}</span>
+									<i v-if="!kovey.playing" class="iconfont icon-bofang" @click="play(index)"></i>
+									<i v-if="kovey.playing" class="iconfont icon-zanting" @click="pause(index)"></i>
+								</p>
+							</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="alertbox iframebox" v-if="other.preview" v-cloak>
+			<div class="alertdiv">
+				<div class="alertiphone">
+					<div class="iphone">
+						<iframe src="" frameborder="0" width="375" height="600"></iframe>
+					</div>
+				</div>
+				<img src="" alt="" class="qrbox">
+				<i class="iconfont icon-guanbi iphone" @click="other.preview = !other.preview"></i>
+			</div>
+		</div>
+	</div>
+</div>
+</body>
+<script src="js/colorpicker.js"></script>
+<script src="js/datepicker.js"></script>
+<script src="js/vuedraggable.min.js"></script>
+<script src="js/base.js"></script>
+<script src="js/public.js"></script>
+<script src="js/main.js"></script>
+</html>
